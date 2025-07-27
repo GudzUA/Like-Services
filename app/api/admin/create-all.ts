@@ -1,24 +1,21 @@
-export const dynamic = "force-dynamic";
-
-import { NextRequest, NextResponse } from "next/server";
+// pages/api/admin/create-all.ts
+import { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/lib/prisma";
 
-export async function POST(req: NextRequest) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ success: false, message: "Method Not Allowed" });
+  }
+
   try {
-    const body = await req.json();
-    const { service, master, subtypes, timeSlots, masterType, photoUrl } = body;
+    const { service, master, subtypes, timeSlots, masterType, photoUrl } = req.body;
 
     let existingService = null;
 
     if (service.id) {
-      existingService = await prisma.service.findUnique({
-        where: { id: service.id },
-      });
+      existingService = await prisma.service.findUnique({ where: { id: service.id } });
     } else {
-      existingService = await prisma.service.findFirst({
-        where: { name: service.name },
-      });
-
+      existingService = await prisma.service.findFirst({ where: { name: service.name } });
       if (!existingService) {
         existingService = await prisma.service.create({
           data: { name: service.name, type: service.type },
@@ -83,7 +80,7 @@ export async function POST(req: NextRequest) {
       )
     );
 
-    return NextResponse.json({
+    return res.status(200).json({
       success: true,
       service: existingService,
       master: createdMaster,
@@ -92,13 +89,6 @@ export async function POST(req: NextRequest) {
     });
   } catch (error: any) {
     console.error("❌ create-all error:", error);
-    return NextResponse.json(
-      { success: false, message: error.message },
-      { status: 500 }
-    );
+    return res.status(500).json({ success: false, message: error.message });
   }
-}
-
-export async function GET() {
-  return new Response("Method Not Allowed", { status: 405 });
 }
