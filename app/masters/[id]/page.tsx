@@ -1,4 +1,5 @@
 export const dynamic = "force-dynamic";
+export const dynamicParams = true;
 
 import { prisma } from "@/lib/prisma";
 import MasterBookingClient from "@/components/MasterBookingClient";
