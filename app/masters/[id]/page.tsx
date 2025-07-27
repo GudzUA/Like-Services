@@ -1,5 +1,9 @@
 import { prisma } from "@/lib/prisma";
 import MasterBookingClient from "@/components/MasterBookingClient";
+import { notFound } from "next/navigation";
+
+// 🟢 Забороняємо static pre-rendering на Vercel
+export const dynamic = "force-dynamic";
 
 export default async function MasterPage({ params }: { params: { id: string } }) {
   try {
@@ -10,11 +14,11 @@ export default async function MasterPage({ params }: { params: { id: string } })
       },
     });
 
-    if (!master) return <div className="p-4">❌ Майстра не знайдено</div>;
+    if (!master) return notFound();
 
     return (
       <div className="p-6 flex flex-col items-center">
-        <h1 className="text-2xl font-bold mb-2">Майстер: {master.name ?? "Без імені"}</h1>
+        <h1 className="text-2xl font-bold mb-2">Майстер: {master.name ?? "—"}</h1>
         <p className="text-sm text-gray-600 mb-1">📞 {master.phone ?? "—"}</p>
         <p className="text-sm text-gray-600 mb-1">📧 {master.email ?? "—"}</p>
         <p className="text-sm text-gray-600 mb-6">📍 {master.address ?? "—"}</p>
@@ -33,8 +37,8 @@ export default async function MasterPage({ params }: { params: { id: string } })
         />
       </div>
     );
-  } catch (error: any) {
-    console.error("❌ MasterPage error:", error);
-    return <div className="p-4">Помилка завантаження майстра</div>;
+  } catch (err) {
+    console.error("❌ Помилка генерації сторінки майстра:", err);
+    return <div className="p-4 text-red-600">❌ Помилка генерації майстра</div>;
   }
 }
