@@ -30,7 +30,6 @@ export default async function MasterPage({ params }: { params: { id: string } })
         {subtypes.length === 0 ? (
           <p>Немає підтипів</p>
         ) : (
-          <>
             <MasterBookingClient
               masterId={master.id}
               subtypes={subtypes.map((subtype) => ({
@@ -40,7 +39,6 @@ export default async function MasterPage({ params }: { params: { id: string } })
                 price: subtype.price,
               }))}
             />
-          </>
         )}
       </div>
     );
