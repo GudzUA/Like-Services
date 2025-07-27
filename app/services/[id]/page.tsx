@@ -28,16 +28,16 @@ export default async function ServiceMastersPage({ params }: { params: { id: str
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-full overflow-hidden bg-gray-100 border">
                 {master.photoUrl ? (
-  <Image
-    src={master.photoUrl}
-    alt={master.name ?? "Майстер"}
-    width={56}
-    height={56}
-    className="object-cover w-full h-full"
-  />
-) : (
-  <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">👤</div>
-)}
+                  <Image
+                    src={master.photoUrl}
+                    alt={master.name ?? "Майстер"}
+                    width={56}
+                    height={56}
+                    className="object-cover w-full h-full"
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">👤</div>
+                )}
               </div>
 
               <div className="flex flex-col">
