@@ -15,6 +15,8 @@ export default async function MasterPage({ params }: { params: { id: string } })
 
     if (!master) return notFound();
 
+    const subtypes = master.subtypes ?? [];
+
     return (
       <div className="p-6 flex flex-col items-center">
         <h1 className="text-2xl font-bold mb-2">Майстер: {master.name ?? "—"}</h1>
@@ -23,21 +25,29 @@ export default async function MasterPage({ params }: { params: { id: string } })
         <p className="text-sm text-gray-600 mb-6">📍 {master.address ?? "—"}</p>
 
         <h2 className="text-xl font-semibold mb-4">Підтипи послуг</h2>
-        {master.subtypes.length === 0 && <p>Немає підтипів</p>}
 
-        <MasterBookingClient
-          masterId={master.id}
-          subtypes={master.subtypes.map((subtype) => ({
-            id: subtype.id,
-            name: subtype.name,
-            duration: subtype.duration,
-            price: subtype.price,
-          }))}
-        />
+        {subtypes.length === 0 ? (
+          <p>Немає підтипів</p>
+        ) : (
+          <MasterBookingClient
+            masterId={master.id}
+            subtypes={subtypes.map((subtype) => ({
+              id: subtype.id,
+              name: subtype.name,
+              duration: subtype.duration,
+              price: subtype.price,
+            }))}
+          />
+        )}
       </div>
     );
-  } catch (err) {
+  } catch (err: any) {
     console.error("❌ Помилка генерації сторінки майстра:", err);
-    return <div className="p-4 text-red-600">❌ Помилка генерації майстра</div>;
+    return (
+      <div className="p-4 text-red-600">
+        ❌ Помилка генерації сторінки майстра:
+        <pre className="text-xs whitespace-pre-wrap">{err.message}</pre>
+      </div>
+    );
   }
 }
