@@ -16,7 +16,7 @@ export default async function ServicesPage() {
           <Link
             key={service.id}
             href={
-              service.name === "Чоловік на годину"
+              service.name === "Services"
                 ? "/task"
                 : `/task/${service.id}`
             }
