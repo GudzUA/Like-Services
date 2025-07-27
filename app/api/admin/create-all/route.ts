@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
@@ -6,7 +8,6 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { service, master, subtypes, timeSlots, masterType, photoUrl } = body;
 
-    // 🔍 Визначення існуючої або нової послуги
     let existingService = null;
 
     if (service.id) {
@@ -19,63 +20,57 @@ export async function POST(req: NextRequest) {
       });
 
       if (!existingService) {
-      existingService = await prisma.service.create({
-      data: { name: service.name, type: service.type },
-      });
+        existingService = await prisma.service.create({
+          data: { name: service.name, type: service.type },
+        });
       }
     }
 
-// 🔍 Перевірка чи такий користувач вже існує
-let createdMaster = await prisma.user.findUnique({
-  where: { email: master.email }, // або phone: master.phone — залежно від твоєї логіки
-});
+    let createdMaster = await prisma.user.findUnique({
+      where: { email: master.email },
+    });
 
-// 🔹 Якщо не існує — створити нового
-if (!createdMaster) {
-  createdMaster = await prisma.user.create({
-    data: {
-      name: master.name,
-      email: master.email,
-      phone: master.phone,
-      address: master.address,
-      type: "admin",
-      masterType,
-      photoUrl,
-      services: {
-        connect: { id: existingService.id },
-      },
-    },
-  });
-} else {
-  // Якщо існує — привʼязати до послуги, якщо ще не привʼязаний
-  await prisma.user.update({
-  where: { id: createdMaster.id },
-  data: {
-    masterType, // 🆕
-    services: {
-      connect: { id: existingService.id },
-    },
-  },
-});
-}
+    if (!createdMaster) {
+      createdMaster = await prisma.user.create({
+        data: {
+          name: master.name,
+          email: master.email,
+          phone: master.phone,
+          address: master.address,
+          type: "admin",
+          masterType,
+          photoUrl,
+          services: {
+            connect: { id: existingService.id },
+          },
+        },
+      });
+    } else {
+      await prisma.user.update({
+        where: { id: createdMaster.id },
+        data: {
+          masterType,
+          services: {
+            connect: { id: existingService.id },
+          },
+        },
+      });
+    }
 
-   // 🔹 Створення підтипів
-const createdSubtypes = await Promise.all(
-  subtypes.map((subtype: any) =>
-    prisma.subtype.create({
-      data: {
-        name: subtype.name,
-        duration: subtype.duration,
-        price: subtype.price,
-        serviceId: existingService!.id,
-        masterId: createdMaster.id, // 🆕 Прив’язка до майстра
-      },
-    })
-  )
-);
+    const createdSubtypes = await Promise.all(
+      subtypes.map((subtype: any) =>
+        prisma.subtype.create({
+          data: {
+            name: subtype.name,
+            duration: subtype.duration,
+            price: subtype.price,
+            serviceId: existingService!.id,
+            masterId: createdMaster.id,
+          },
+        })
+      )
+    );
 
-
-    // 🔹 Створення таймслотів
     const createdTimeSlots = await Promise.all(
       timeSlots.map((slot: any) =>
         prisma.timeSlot.create({
@@ -103,6 +98,7 @@ const createdSubtypes = await Promise.all(
     );
   }
 }
+
 export async function GET() {
   return new Response("Method Not Allowed", { status: 405 });
 }
