@@ -30,15 +30,18 @@ export default async function MasterPage({ params }: { params: { id: string } })
         {subtypes.length === 0 ? (
           <p>Немає підтипів</p>
         ) : (
-          <MasterBookingClient
-            masterId={master.id}
-            subtypes={subtypes.map((subtype) => ({
-              id: subtype.id,
-              name: subtype.name,
-              duration: subtype.duration,
-              price: subtype.price,
-            }))}
-          />
+          {/*
+<MasterBookingClient
+  masterId={master.id}
+  subtypes={subtypes.map((subtype) => ({
+    id: subtype.id,
+    name: subtype.name,
+    duration: subtype.duration,
+    price: subtype.price,
+  }))}
+/>
+*/}
+
         )}
       </div>
     );
