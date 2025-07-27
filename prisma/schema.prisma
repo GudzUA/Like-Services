@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider     = "mysql"
+  url          = env("DATABASE_URL")
+  relationMode = "prisma" // Ми використовуємо prisma-звʼязки без foreign keys
+}
+
+//
+// 🧑 Користувач (Майстер або Клієнт)
+//
+model User {
+  id        String  @id @default(cuid())
+  email     String  @unique
+  name      String?
+  phone     String  @unique
+  address   String?
+  photoUrl   String?
+  masterType   String?
+  isMaster  Boolean @default(false) // true якщо майстер
+  type      String  // client / moderator / admin
+
+  // 🔗 Звʼязки
+  services   Service[]  @relation("MasterServices")   // Майстер може мати кілька послуг
+  timeSlots  TimeSlot[] @relation("UserTimeSlots")    // Слоти майстра
+  bookings   Booking[]  @relation("UserBookings")     // Записи клієнта
+  subtypes  Subtype[] 
+}
+
+//
+// ✂️ Послуга (напр. "Стрижка")
+// Може мати кілька підтипів: "Жіноча", "Чоловіча"
+//
+model Service {
+  id      String @id @default(cuid())
+  name    String
+  type    String 
+  masters  User[]    @relation("MasterServices") // Послуга належить майстрам
+  subtypes Subtype[] // Має підтипи
+}
+
+//
+// 🧾 Підтип послуги (напр. "Жіноча стрижка")
+// Має ціну і тривалість
+//
+model Subtype {
+  id         String   @id @default(cuid())
+  name       String
+  price      Int      // CAD
+  duration   Int      // хвилин
+
+  service    Service  @relation(fields: [serviceId], references: [id])
+  serviceId  String
+
+  master     User     @relation(fields: [masterId], references: [id]) // 🆕 додаємо звʼязок
+  masterId   String                                             // 🆕 зовнішній ключ
+
+  bookings   Booking[] @relation("SubtypeBookings") // Записи на цей підтип
+}
+
+//
+// 🕑 Слот часу — доступний інтервал для запису
+//
+model TimeSlot {
+  id        String   @id @default(cuid())
+  start     DateTime // Початок слоту
+  end       DateTime // Кінець (автоматично генерується з duration)
+  master    User?     @relation("UserTimeSlots", fields: [masterId], references: [id])
+  masterId  String?
+
+  booking   Booking? // Якщо хтось забронював — тут буде запис
+}
+
+//
+// 📌 Запис на послугу у слоті
+//
+model Booking {
+  id          String    @id @default(cuid())
+  user        User      @relation("UserBookings", fields: [userId], references: [id])
+  userId      String
+
+  subtype     Subtype   @relation("SubtypeBookings", fields: [subtypeId], references: [id])
+  subtypeId   String
+
+  timeSlot    TimeSlot? @relation(fields: [timeSlotId], references: [id])
+  timeSlotId  String?   @unique // Один слот = максимум один запис
+
+  createdAt   DateTime  @default(now())
+}
+
+model Task {
+  id        String   @id @default(cuid())
+  category  String   // Категорія: "Чоловік на годину", "Ремонт телефону", тощо
+  details   String   // Опис завдання
+  price     Int?     // Бажана ціна (може бути null)
+  flexible  Boolean  // true = майстер сам призначить ціну
+  name      String   // Імʼя клієнта
+  phone     String   // Телефон
+  createdAt DateTime @default(now())
+}
+
