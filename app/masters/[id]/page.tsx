@@ -4,9 +4,6 @@ import { prisma } from "@/lib/prisma";
 import MasterBookingClient from "@/components/MasterBookingClient";
 import { notFound } from "next/navigation";
 
-// 🟢 Забороняємо static pre-rendering на Vercel
-export const dynamic = "force-dynamic";
-
 export default async function MasterPage({ params }: { params: { id: string } }) {
   try {
     const master = await prisma.user.findUnique({
