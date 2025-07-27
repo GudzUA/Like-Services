@@ -28,7 +28,7 @@ export default async function ServiceMastersPage({ params }: { params: { id: str
                 {master.photoUrl ? (
                   <Image
                     src={master.photoUrl}
-                    alt={master.name}
+                    alt={master.name ?? "Майстер"}
                     width={56}
                     height={56}
                     className="object-cover w-full h-full"

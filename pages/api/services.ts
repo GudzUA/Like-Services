@@ -1,7 +1,11 @@
-import { NextResponse } from "next/server";
+import { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/lib/prisma";
 
-export async function GET() {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== "GET") {
+    return res.status(405).json({ success: false, message: "Method Not Allowed" });
+  }
+
   try {
     const services = await prisma.service.findMany({
       select: {
@@ -10,9 +14,9 @@ export async function GET() {
       },
     });
 
-    return NextResponse.json({ success: true, services });
+    return res.status(200).json({ success: true, services });
   } catch (error: any) {
     console.error("❌ Failed to load services:", error);
-    return NextResponse.json({ success: false, message: error.message }, { status: 500 });
+    return res.status(500).json({ success: false, message: error.message });
   }
 }
