@@ -29,7 +29,7 @@ export default async function ServiceMastersPage({ params }: { params: { id: str
               <div className="w-14 h-14 rounded-full overflow-hidden bg-gray-100 border">
                 {master.photoUrl ? (
                   <Image
-                    src={master.photoUrl}
+                   
                     alt={master.name ?? "Майстер"}
                     width={56}
                     height={56}
