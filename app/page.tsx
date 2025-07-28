@@ -14,7 +14,6 @@ export default async function HomePage() {
     orderBy: { name: "asc" },
   });
 
-  // 🔸 Розділяємо на schedule і task
   const scheduleServices = services.filter(
     (s) => s.masters[0]?.masterType !== "task"
   );
@@ -49,12 +48,26 @@ export default async function HomePage() {
       {/* 🔷 Блок для послуг з розкладом */}
       {scheduleServices.length > 0 && (
         <>
-          <h2 className="text-2xl font-semibold mt-4 mb-2 text-center">💇‍♀️ Краса та сервіси</h2>
+          <h2 className="text-2xl font-semibold mt-4 mb-2 text-center">
+            💇‍♀️ Краса та сервіси
+          </h2>
           <div className="flex flex-col gap-4">
             {scheduleServices.map(renderServiceCard)}
           </div>
         </>
       )}
-         </main>
+
+      {/* 🔸 Блок для task-послуг */}
+      {taskServices.length > 0 && (
+        <>
+          <h2 className="text-2xl font-semibold mt-8 mb-2 text-center">
+            👨‍🔧 Чоловік на годину
+          </h2>
+          <div className="flex flex-col gap-4">
+            {taskServices.map(renderServiceCard)}
+          </div>
+        </>
+      )}
+    </main>
   );
 }
