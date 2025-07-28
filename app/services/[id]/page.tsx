@@ -1,4 +1,5 @@
 export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
 
 import { prisma } from "@/lib/db";
 import Link from "next/link";
@@ -8,11 +9,18 @@ export default async function ServiceMastersPage({ params }: { params: { id: str
   const service = await prisma.service.findUnique({
     where: { id: params.id },
     include: {
-      masters: true, // або через servicesOnUsers, залежно від моделі
+      masters: true,
     },
   });
 
-  if (!service) return <div>Послугу не знайдено</div>;
+  if (!service) {
+    return (
+      <main className="p-6 text-center text-gray-600">
+        <h1 className="text-2xl font-bold mb-4">Послугу не знайдено</h1>
+        <p>Можливо, її ще не додано або вона була видалена.</p>
+      </main>
+    );
+  }
 
   return (
     <main className="p-6 flex flex-col items-center">
