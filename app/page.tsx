@@ -14,12 +14,22 @@ export default async function HomePage() {
     orderBy: { name: "asc" },
   });
 
-  const scheduleServices = services.filter(
-    (s) => s.masters[0]?.masterType !== "task"
+if (services.length === 0) {
+  return (
+    <main className="p-6 text-center text-gray-600">
+      <h1 className="text-2xl font-bold mb-4">Послуги ще не додано</h1>
+      <p>Модератор скоро додасть доступні послуги.</p>
+    </main>
   );
-  const taskServices = services.filter(
-    (s) => s.masters[0]?.masterType === "task"
-  );
+}
+
+const scheduleServices = services.filter(
+  (s) => s.masters.length > 0 && s.masters[0].masterType !== "task"
+);
+const taskServices = services.filter(
+  (s) => s.masters.length > 0 && s.masters[0].masterType === "task"
+);
+
 
   const renderServiceCard = (service: any) => {
     const masterType = service.masters[0]?.masterType || "schedule";
