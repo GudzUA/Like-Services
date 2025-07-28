@@ -4,38 +4,57 @@ import { prisma } from "@/lib/db";
 import Link from "next/link";
 
 export default async function HomePage() {
-  const services = await prisma.service.findMany({
-    include: {
-      masters: {
-        select: { masterType: true },
-        take: 1,
+  let services = [];
+
+  try {
+    services = await prisma.service.findMany({
+      include: {
+        masters: {
+          select: { masterType: true },
+          take: 1,
+        },
       },
-    },
-    orderBy: { name: "asc" },
-  });
+      orderBy: { name: "asc" },
+    });
+  } catch (error) {
+    console.error("❌ Помилка отримання послуг:", error);
+    return (
+      <main className="p-6 text-red-600 text-center">
+        <h1 className="text-2xl font-bold mb-4">Помилка завантаження</h1>
+        <p>{(error as Error).message}</p>
+      </main>
+    );
+  }
 
-if (services.length === 0) {
-  return (
-    <main className="p-6 text-center text-gray-600">
-      <h1 className="text-2xl font-bold mb-4">Послуги ще не додано</h1>
-      <p>Модератор скоро додасть доступні послуги.</p>
-    </main>
+  if (!services || services.length === 0) {
+    return (
+      <main className="p-6 text-center text-gray-600">
+        <h1 className="text-2xl font-bold mb-4">Послуги ще не додано</h1>
+        <p>Модератор скоро додасть доступні послуги.</p>
+      </main>
+    );
+  }
+
+  const scheduleServices = services.filter(
+    (s) =>
+      s.masters &&
+      s.masters.length > 0 &&
+      s.masters[0].masterType !== "task"
   );
-}
 
-const scheduleServices = services.filter(
-  (s) => s.masters.length > 0 && s.masters[0].masterType !== "task"
-);
-const taskServices = services.filter(
-  (s) => s.masters.length > 0 && s.masters[0].masterType === "task"
-);
-
+  const taskServices = services.filter(
+    (s) =>
+      s.masters &&
+      s.masters.length > 0 &&
+      s.masters[0].masterType === "task"
+  );
 
   const renderServiceCard = (service: any) => {
     const masterType = service.masters[0]?.masterType || "schedule";
-    const href = masterType === "task"
-      ? `/task/${service.id}`
-      : `/services/${service.id}`;
+    const href =
+      masterType === "task"
+        ? `/task/${service.id}`
+        : `/services/${service.id}`;
 
     return (
       <Link
@@ -55,7 +74,6 @@ const taskServices = services.filter(
     <main className="p-6 flex flex-col items-center">
       <h1 className="text-3xl font-bold mb-6 text-center">Наші послуги</h1>
 
-      {/* 🔷 Блок для послуг з розкладом */}
       {scheduleServices.length > 0 && (
         <>
           <h2 className="text-2xl font-semibold mt-4 mb-2 text-center">
@@ -67,7 +85,6 @@ const taskServices = services.filter(
         </>
       )}
 
-      {/* 🔸 Блок для task-послуг */}
       {taskServices.length > 0 && (
         <>
           <h2 className="text-2xl font-semibold mt-8 mb-2 text-center">
