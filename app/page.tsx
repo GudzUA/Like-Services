@@ -3,8 +3,16 @@ export const dynamic = "force-dynamic";
 import { prisma } from "@/lib/db";
 import Link from "next/link";
 
+// ✅ Тип послуги з masterType
+type ServiceWithMasterType = {
+  id: string;
+  name: string;
+  type: string;
+  masters: { masterType: string | null }[];
+};
+
 export default async function HomePage() {
-  let services = [];
+  let services: ServiceWithMasterType[] = [];
 
   try {
     services = await prisma.service.findMany({
@@ -49,7 +57,7 @@ export default async function HomePage() {
       s.masters[0].masterType === "task"
   );
 
-  const renderServiceCard = (service: any) => {
+  const renderServiceCard = (service: ServiceWithMasterType) => {
     const masterType = service.masters[0]?.masterType || "schedule";
     const href =
       masterType === "task"
