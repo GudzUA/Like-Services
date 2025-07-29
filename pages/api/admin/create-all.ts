@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/lib/prisma";
 import type { Service } from "@prisma/client";
+import type { TimeSlot } from "@prisma/client";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
@@ -77,17 +78,34 @@ if (!existingService) {
       )
     );
 
-    const createdTimeSlots = await Promise.all(
-      timeSlots.map((slot: any) =>
-        prisma.timeSlot.create({
-          data: {
-            start: new Date(slot.start + ":00"),
-            end: new Date(slot.end + ":00"),
-            masterId: createdMaster.id,
-          },
-        })
-      )
-    );
+    const createdTimeSlots: TimeSlot[] = [];
+
+for (const slot of timeSlots) {
+  try {
+    const start = new Date(slot.start);
+    const end = new Date(slot.end);
+
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      console.warn("⛔️ Пропущено невалідний слот:", slot);
+      continue;
+    }
+
+    start.setMinutes(start.getMinutes() - start.getTimezoneOffset());
+    end.setMinutes(end.getMinutes() - end.getTimezoneOffset());
+
+    const created = await prisma.timeSlot.create({
+      data: {
+        start,
+        end,
+        masterId: createdMaster.id,
+      },
+    });
+
+    createdTimeSlots.push(created);
+  } catch (err) {
+    console.error("⚠️ Помилка при створенні слота:", slot, err);
+  }
+}
 
     return res.status(200).json({
       success: true,

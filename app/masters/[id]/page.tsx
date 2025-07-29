@@ -1,30 +1,23 @@
 export const dynamic = "force-dynamic";
 export const dynamicParams = true;
 
-// ⛔️ тимчасово не імпортуємо prisma
-// import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import MasterBookingClient from "@/components/MasterBookingClient";
-// import { notFound } from "next/navigation";
+import { notFound } from "next/navigation";
 
 export default async function MasterPage({ params }: { params: { id: string } }) {
-  // ⛔️ Замість запиту до БД — мокові дані
-  const master = {
-    id: params.id,
-    name: "Тест Майстер",
-    phone: "123456",
-    email: "test@example.com",
-    address: "Тестова адреса",
-    subtypes: [
-      {
-        id: "subtype1",
-        name: "Стрижка",
-        duration: 30,
-        price: 25,
-      },
-    ],
-  };
+  const master = await prisma.user.findFirst({
+    where: { id: params.id },
+    include: {
+      subtypes: true,
+    },
+  });
 
-  const subtypes = master.subtypes;
+  if (!master) return notFound();
+
+  const timeSlots = await prisma.timeSlot.findMany({
+    where: { masterId: params.id },
+  });
 
   return (
     <div className="p-6 flex flex-col items-center">
@@ -35,19 +28,25 @@ export default async function MasterPage({ params }: { params: { id: string } })
 
       <h2 className="text-xl font-semibold mb-4">Підтипи послуг</h2>
 
-      {subtypes.length === 0 ? (
-        <p>Немає підтипів</p>
-      ) : (
-        <MasterBookingClient
-          masterId={master.id}
-          subtypes={subtypes.map((subtype) => ({
-            id: subtype.id,
-            name: subtype.name,
-            duration: subtype.duration,
-            price: subtype.price,
-          }))}
-        />
-      )}
+{!master.subtypes || master.subtypes.length === 0 ? (
+  <p>Немає підтипів</p>
+) : (
+  <MasterBookingClient
+    masterId={master.id}
+    subtypes={master.subtypes.map((subtype) => ({
+      id: subtype.id,
+      name: subtype.name,
+      duration: subtype.duration,
+      price: subtype.price,
+    }))}
+    timeSlots={timeSlots.map(slot => ({
+  id: slot.id,
+  start: slot.start.toISOString(),
+  end: slot.end.toISOString(),
+}))}
+  />
+)}
+
     </div>
   );
 }

@@ -1,136 +1,66 @@
-"use client";
+export const dynamic = "force-dynamic";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import axios from "axios";
+import { prisma } from "@/lib/db";
+import Link from "next/link";
+import Image from "next/image";
 
-export default function TaskPage() {
-  const [category, setCategory] = useState("Чоловік на годину");
-  const [details, setDetails] = useState("");
-  const [price, setPrice] = useState("");
-  const [flexible, setFlexible] = useState(false);
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [submitted, setSubmitted] = useState(false);
-  const [showModal, setShowModal] = useState(false);
+export default async function TaskMasterListPage({ params }: { params: { id: string } }) {
+  const service = await prisma.service.findUnique({
+    where: { id: params.id },
+    include: {
+      masters: {
+        where: { masterType: "task" },
+        select: { id: true, name: true, phone: true, photoUrl: true },
+      },
+    },
+  });
 
-  const router = useRouter();
-
-  const handleSubmit = async () => {
-    if (!details || !name || !phone || (!flexible && !price)) {
-      alert("Будь ласка, заповніть усі поля.");
-      return;
-    }
-
-    const response = await axios.post("/api/task/create", {
-      category,
-      details,
-      price: flexible ? null : parseInt(price),
-      flexible,
-      name,
-      phone,
-    });
-
-    if (response.data.success) {
-      setSubmitted(true);
-      setTimeout(() => {
-        router.push("/services");
-      }, 2000);
-    } else {
-      alert("Помилка при створенні завдання");
-    }
-  };
-
-  if (submitted) {
+  if (!service) {
     return (
-      <div className="p-6 max-w-xl mx-auto text-center">
-        <h1 className="text-2xl font-bold mb-4 text-green-600">✅ Завдання прийнято!</h1>
-        <p className="text-gray-700">Майстер звʼяжеться з вами найближчим часом.</p>
-      </div>
+      <main className="p-6 text-center text-gray-600">
+        <h1 className="text-2xl font-bold mb-4">Послугу не знайдено</h1>
+      </main>
     );
   }
 
   return (
-    <div className="p-6 max-w-xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6 text-center">🧰 Створення завдання</h1>
+    <main className="p-6 flex flex-col items-center">
+      <h1 className="text-2xl font-bold mb-6">{service.name}</h1>
+      <p className="mb-4 text-gray-600">Оберіть майстра для цієї послуги:</p>
 
-      <label className="block mb-2 font-semibold">Опишіть завдання</label>
-      <textarea
-        value={details}
-        onChange={(e) => setDetails(e.target.value)}
-        className="w-full border px-3 py-2 rounded mb-4"
-        rows={4}
-      />
-
-      <label className="block mb-2 font-semibold">Бажана ціна (CAD)</label>
-      <input
-        type="number"
-        value={price}
-        disabled={flexible}
-        onChange={(e) => setPrice(e.target.value)}
-        className="w-full border px-3 py-2 rounded mb-4"
-      />
-
-      <label className="inline-flex items-center mb-4">
-        <input
-          type="checkbox"
-          checked={flexible}
-          onChange={() => setFlexible(!flexible)}
-          className="mr-2"
-        />
-        Нехай майстер сам призначить ціну
-      </label>
-
-      <label className="block mb-2 font-semibold">Ваше імʼя</label>
-      <input
-        type="text"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        className="w-full border px-3 py-2 rounded mb-4"
-      />
-
-      <label className="block mb-2 font-semibold">Ваш телефон</label>
-      <input
-        type="tel"
-        value={phone}
-        onChange={(e) => setPhone(e.target.value)}
-        className="w-full border px-3 py-2 rounded mb-6"
-      />
-
-      <button
-        onClick={() => setShowModal(true)}
-        className="bg-blue-600 text-white py-2 px-6 rounded hover:bg-blue-700 w-full"
-      >
-        📩 Надіслати завдання
-      </button>
-
-      {/* Модальне підтвердження */}
-      {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white p-6 rounded shadow-lg w-80">
-            <h2 className="text-lg font-bold mb-4">Підтвердити завдання?</h2>
-            <p>🛠️ <b>{category}</b></p>
-            <p>📝 <b>{details}</b></p>
-            <p>💰 <b>{flexible ? "Майстер призначить" : `${price} CAD`}</b></p>
-            <p>👤 <b>{name}</b></p>
-            <p>📞 <b>{phone}</b></p>
-            <div className="flex justify-end mt-4 gap-2">
-              <button
-                onClick={() => setShowModal(false)}
-                className="px-3 py-1 bg-gray-300 rounded"
-              >
-                Скасувати
-              </button>
-              <button
-                onClick={handleSubmit}
-                className="px-3 py-1 bg-blue-600 text-white rounded"
-              >
-                Так, підтвердити
-              </button>
-            </div>
-          </div>
+      {service.masters.length === 0 ? (
+        <p className="text-gray-500">Наразі немає майстрів для цієї послуги.</p>
+      ) : (
+        <div className="flex flex-col gap-4">
+          {service.masters.map((master) => (
+            <Link
+              key={master.id}
+              href={`/task/master/${master.id}?category=${encodeURIComponent(service.name)}`}
+              className="w-[360px] bg-white border border-gray-300 rounded-lg shadow-md hover:shadow-lg transition-all px-4 py-3"
+            >
+              <div className="flex items-center gap-4">
+                <div className="w-14 h-14 rounded-full overflow-hidden bg-gray-100 border">
+                  {master.photoUrl ? (
+                    <Image
+                      src={master.photoUrl}
+                      alt={master.name ?? "Майстер"}
+                      width={56}
+                      height={56}
+                      className="object-cover w-full h-full"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">👤</div>
+                  )}
+                </div>
+                <div className="flex flex-col">
+                  <span className="font-medium text-lg">{master.name}</span>
+                  <span className="text-sm text-gray-500">{master.phone}</span>
+                </div>
+              </div>
+            </Link>
+          ))}
         </div>
       )}
-    </div>
+    </main>
   );
 }

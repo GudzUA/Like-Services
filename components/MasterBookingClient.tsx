@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { format } from "date-fns";
 import TimeSlotSelector from "./TimeSlotSelector";
@@ -19,10 +19,13 @@ interface SlotMap {
 export default function MasterBookingClient({
   masterId,
   subtypes,
+  timeSlots, // ← додай сюди
 }: {
   masterId: string;
   subtypes: Subtype[];
+  timeSlots: { id: string; start: string; end: string; }[]; // типізація слота
 }) {
+
   const [selectedSubtype, setSelectedSubtype] = useState<Subtype | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [slotTimes, setSlotTimes] = useState<SlotMap>({});
@@ -30,6 +33,26 @@ export default function MasterBookingClient({
   const [formData, setFormData] = useState({ name: "", phone: "" });
   const [showModal, setShowModal] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [bookedSlotIds, setBookedSlotIds] = useState<string[]>([]);
+
+useEffect(() => {
+  if (!masterId) return;
+
+  const fetchBookedSlots = async () => {
+    try {
+      const res = await fetch(`/api/bookings/booked?masterId=${masterId}`);
+      const data = await res.json();
+      if (Array.isArray(data)) {
+        setBookedSlotIds(data.map((item) => item.slotId));
+      }
+    } catch (err) {
+      console.error("❌ Error loading booked slots", err);
+    }
+  };
+
+  fetchBookedSlots();
+}, [masterId]);
+
 
   const router = useRouter();
 
@@ -115,11 +138,13 @@ export default function MasterBookingClient({
             {selectedSubtype.duration} хв
           </p>
 
-          <TimeSlotSelector
-            masterId={masterId}
-            subtypeId={selectedSubtype.id}
-            onSelect={(slotId, start, end) => handleSlotSelect(slotId, start, end)}
-          />
+<TimeSlotSelector
+  masterId={masterId}
+  subtypeId={selectedSubtype.id}
+  timeSlots={timeSlots} 
+  bookedSlotIds={bookedSlotIds}
+  onSelect={(slotId, start, end) => handleSlotSelect(slotId, start, end)}
+/>
         </div>
       )}
 

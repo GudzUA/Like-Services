@@ -27,6 +27,7 @@ model User {
   timeSlots  TimeSlot[] @relation("UserTimeSlots")    // Слоти майстра
   bookings   Booking[]  @relation("UserBookings")     // Записи клієнта
   subtypes  Subtype[] 
+  tasks     Task[]   @relation("MasterTasks")
 }
 
 //
@@ -98,6 +99,8 @@ model Task {
   flexible  Boolean  // true = майстер сам призначить ціну
   name      String   // Імʼя клієнта
   phone     String   // Телефон
+  master     User?   @relation("MasterTasks", fields: [masterId], references: [id])
+  masterId   String? 
   createdAt DateTime @default(now())
 }
 

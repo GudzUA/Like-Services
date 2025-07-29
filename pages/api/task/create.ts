@@ -8,7 +8,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const { category, details, price, flexible, name, phone } = req.body;
+    const { category, details, price, flexible, name, phone, masterId } = req.body;
 
     const created = await prisma.task.create({
       data: {
@@ -18,6 +18,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         flexible,
         name,
         phone,
+        masterId,
       },
     });
 
