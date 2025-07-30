@@ -1,26 +1,29 @@
 export const dynamic = "force-dynamic";
-export const dynamicParams = true;
 
+import { prisma } from "@/lib/db";
 import Link from "next/link";
 import Image from "next/image";
-import { notFound } from "next/navigation";
 
 export default async function ServiceMastersPage({ params }: { params: { id: string } }) {
-  // 🔹 Запитуємо через API
-  const res = await fetch(`/api/services/${params.id}`, { cache: "no-store" });
+  const service = await prisma.service.findUnique({
+    where: { id: params.id },
+    include: { masters: true },
+  });
 
-  if (!res.ok) return notFound();
-
-  const { service } = await res.json();
+  if (!service) {
+    return (
+      <main className="p-6 text-center text-gray-600">
+        <h1 className="text-2xl font-bold mb-4">Послугу не знайдено</h1>
+        <p>Можливо, її ще не додано або вона була видалена.</p>
+      </main>
+    );
+  }
 
   return (
     <main className="p-6 flex flex-col items-center">
-      <h1 className="text-2xl font-bold mb-6">
-        Майстри для послуги: {service.name}
-      </h1>
-
+      <h1 className="text-2xl font-bold mb-6">Майстри для послуги: {service.name}</h1>
       <div className="flex flex-col gap-4">
-        {service.masters.map((master: any) => (
+        {service.masters.map((master) => (
           <Link
             key={master.id}
             href={`/masters/${master.id}`}
@@ -40,7 +43,6 @@ export default async function ServiceMastersPage({ params }: { params: { id: str
                   <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">👤</div>
                 )}
               </div>
-
               <div className="flex flex-col">
                 <span className="font-medium text-lg">{master.name}</span>
                 <span className="text-sm text-gray-500">{master.phone}</span>

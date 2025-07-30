@@ -1,19 +1,27 @@
 export const dynamic = "force-dynamic";
-export const dynamicParams = true;
 
+import { prisma } from "@/lib/db";
 import Link from "next/link";
 import Image from "next/image";
-import { notFound } from "next/navigation";
 
 export default async function TaskMasterListPage({ params }: { params: { id: string } }) {
-  const res = await fetch(
-    `${process.env.NEXT_PUBLIC_SITE_URL}/api/task-services/${params.id}`,
-    { cache: "no-store" }
-  );
+  const service = await prisma.service.findUnique({
+    where: { id: params.id },
+    include: {
+      masters: {
+        where: { masterType: "task" },
+        select: { id: true, name: true, phone: true, photoUrl: true },
+      },
+    },
+  });
 
-  if (!res.ok) return notFound();
-
-  const { service } = await res.json();
+  if (!service) {
+    return (
+      <main className="p-6 text-center text-gray-600">
+        <h1 className="text-2xl font-bold mb-4">Послугу не знайдено</h1>
+      </main>
+    );
+  }
 
   return (
     <main className="p-6 flex flex-col items-center">
@@ -24,7 +32,7 @@ export default async function TaskMasterListPage({ params }: { params: { id: str
         <p className="text-gray-500">Наразі немає майстрів для цієї послуги.</p>
       ) : (
         <div className="flex flex-col gap-4">
-          {service.masters.map((master: any) => (
+          {service.masters.map((master) => (
             <Link
               key={master.id}
               href={`/task/master/${master.id}?category=${encodeURIComponent(service.name)}`}
@@ -41,9 +49,7 @@ export default async function TaskMasterListPage({ params }: { params: { id: str
                       className="object-cover w-full h-full"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">
-                      👤
-                    </div>
+                    <div className="w-full h-full flex items-center justify-center text-gray-400 text-sm">👤</div>
                   )}
                 </div>
                 <div className="flex flex-col">

@@ -1,21 +1,22 @@
 export const dynamic = "force-dynamic";
-export const dynamicParams = true;
 
+import { prisma } from "@/lib/db";
 import MasterBookingClient from "@/components/MasterBookingClient";
 import { notFound } from "next/navigation";
 
-export default async function MasterPage({
-  params,
-}: {
-  params: { id: string };
-}) {
-  const res = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/masters/${params.id}`, {
-    cache: "no-store",
+export default async function MasterPage({ params }: { params: { id: string } }) {
+  // Отримуємо майстра напряму з БД
+  const master = await prisma.user.findFirst({
+    where: { id: params.id },
+    include: { subtypes: true },
   });
 
-  if (!res.ok) return notFound();
+  if (!master) return notFound();
 
-  const { master, timeSlots } = await res.json();
+  // Отримуємо слоти напряму з БД
+  const timeSlots = await prisma.timeSlot.findMany({
+    where: { masterId: params.id },
+  });
 
   return (
     <div className="p-6 flex flex-col items-center">
@@ -37,10 +38,10 @@ export default async function MasterPage({
             duration: subtype.duration,
             price: subtype.price,
           }))}
-          timeSlots={timeSlots.map((slot: any) => ({
+          timeSlots={timeSlots.map((slot) => ({
             id: slot.id,
-            start: slot.start,
-            end: slot.end,
+            start: slot.start.toISOString(),
+            end: slot.end.toISOString(),
           }))}
         />
       )}
