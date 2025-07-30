@@ -1,33 +1,26 @@
 export const dynamic = "force-dynamic";
-export const fetchCache = "force-no-store";
+export const dynamicParams = true;
 
-import { prisma } from "@/lib/db";
 import Link from "next/link";
 import Image from "next/image";
+import { notFound } from "next/navigation";
 
 export default async function ServiceMastersPage({ params }: { params: { id: string } }) {
-  const service = await prisma.service.findUnique({
-    where: { id: params.id },
-    include: {
-      masters: true,
-    },
-  });
+  // 🔹 Запитуємо через API
+  const res = await fetch(`/api/services/${params.id}`, { cache: "no-store" });
 
-  if (!service) {
-    return (
-      <main className="p-6 text-center text-gray-600">
-        <h1 className="text-2xl font-bold mb-4">Послугу не знайдено</h1>
-        <p>Можливо, її ще не додано або вона була видалена.</p>
-      </main>
-    );
-  }
+  if (!res.ok) return notFound();
+
+  const { service } = await res.json();
 
   return (
     <main className="p-6 flex flex-col items-center">
-      <h1 className="text-2xl font-bold mb-6">Майстри для послуги: {service.name}</h1>
+      <h1 className="text-2xl font-bold mb-6">
+        Майстри для послуги: {service.name}
+      </h1>
 
       <div className="flex flex-col gap-4">
-        {service.masters.map((master) => (
+        {service.masters.map((master: any) => (
           <Link
             key={master.id}
             href={`/masters/${master.id}`}

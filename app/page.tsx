@@ -1,40 +1,34 @@
 export const dynamic = "force-dynamic";
 
-import { prisma } from "@/lib/db";
 import Link from "next/link";
 
 export default async function HomePage() {
- const services = await prisma.service.findMany({
-  where: {
-    masters: {
-      some: {
-        masterType: "schedule",
-      },
-    },
-  },
-  include: {
-    masters: {
-      select: { masterType: true },
-      take: 1,
-    },
-  },
-  orderBy: { name: "asc" },
-});
+  const res = await fetch(`${process.env.NEXT_PUBLIC_SITE_URL}/api/services`, {
+    cache: "no-store",
+  });
 
+  if (!res.ok) {
+    return (
+      <main className="p-6 text-center">
+        <p className="text-red-500">Не вдалося завантажити дані.</p>
+      </main>
+    );
+  }
+
+  const services = await res.json();
 
   // 🔸 Розділяємо на schedule і task
   const scheduleServices = services.filter(
-    (s) => s.masters[0]?.masterType !== "task"
+    (s: any) => s.masters[0]?.masterType !== "task"
   );
   const taskServices = services.filter(
-    (s) => s.masters[0]?.masterType === "task"
+    (s: any) => s.masters[0]?.masterType === "task"
   );
 
   const renderServiceCard = (service: any) => {
     const masterType = service.masters[0]?.masterType || "schedule";
-    const href = masterType === "task"
-      ? `/task/${service.id}`
-      : `/services/${service.id}`;
+    const href =
+      masterType === "task" ? `/task/${service.id}` : `/services/${service.id}`;
 
     return (
       <Link
@@ -57,12 +51,14 @@ export default async function HomePage() {
       {/* 🔷 Блок для послуг з розкладом */}
       {scheduleServices.length > 0 && (
         <>
-          <h2 className="text-2xl font-semibold mt-4 mb-2 text-center">💇‍♀️ Краса та сервіси</h2>
+          <h2 className="text-2xl font-semibold mt-4 mb-2 text-center">
+            💇‍♀️ Краса та сервіси
+          </h2>
           <div className="flex flex-col gap-4">
             {scheduleServices.map(renderServiceCard)}
           </div>
         </>
       )}
-         </main>
+    </main>
   );
 }
