@@ -1,11 +1,11 @@
 export const dynamic = "force-dynamic";
+export const dynamicParams = true;
 
 import { prisma } from "@/lib/db";
 import MasterBookingClient from "@/components/MasterBookingClient";
 import { notFound } from "next/navigation";
 
 export default async function MasterPage({ params }: { params: { id: string } }) {
-  // Отримуємо майстра напряму з БД
   const master = await prisma.user.findFirst({
     where: { id: params.id },
     include: { subtypes: true },
@@ -13,7 +13,6 @@ export default async function MasterPage({ params }: { params: { id: string } })
 
   if (!master) return notFound();
 
-  // Отримуємо слоти напряму з БД
   const timeSlots = await prisma.timeSlot.findMany({
     where: { masterId: params.id },
   });
