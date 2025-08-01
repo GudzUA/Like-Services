@@ -1,19 +1,52 @@
-export const dynamic = "force-dynamic";
+"use client";
 
-import { prisma } from "@/lib/db";
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 
-export default async function TaskMasterListPage({ params }: { params: { id: string } }) {
-  const service = await prisma.service.findUnique({
-    where: { id: params.id },
-    include: {
-      masters: {
-        where: { masterType: "task" },
-        select: { id: true, name: true, phone: true, photoUrl: true },
-      },
-    },
-  });
+type Master = {
+  id: string;
+  name?: string;
+  phone?: string;
+  photoUrl?: string;
+};
+
+type Service = {
+  id: string;
+  name: string;
+  masters: Master[];
+};
+
+export default function TaskMasterListPage() {
+  const { id } = useParams() as { id: string };
+  const [service, setService] = useState<Service | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!id || typeof id !== "string") return;
+
+    const fetchService = async () => {
+      try {
+        const res = await fetch(`/api/services/task/${id}`);
+        if (!res.ok) {
+          setService(null);
+          return;
+        }
+        const data = await res.json();
+        setService(data);
+      } catch (err) {
+        console.error("Помилка завантаження:", err);
+        setService(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchService();
+  }, [id]);
+
+  if (loading) return <main className="p-6 text-center">Завантаження...</main>;
 
   if (!service) {
     return (

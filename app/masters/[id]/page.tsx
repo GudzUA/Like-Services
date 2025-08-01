@@ -1,21 +1,67 @@
-export const dynamic = "force-dynamic";
-export const dynamicParams = true;
+"use client";
 
-import { prisma } from "@/lib/db";
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
 import MasterBookingClient from "@/components/MasterBookingClient";
-import { notFound } from "next/navigation";
 
-export default async function MasterPage({ params }: { params: { id: string } }) {
-  const master = await prisma.user.findFirst({
-    where: { id: params.id },
-    include: { subtypes: true },
-  });
+type Subtype = {
+  id: string;
+  name: string;
+  duration: number;
+  price: number;
+};
 
-  if (!master) return notFound();
+type TimeSlot = {
+  id: string;
+  start: string;
+  end: string;
+};
 
-  const timeSlots = await prisma.timeSlot.findMany({
-    where: { masterId: params.id },
-  });
+type Master = {
+  id: string;
+  name?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  subtypes: Subtype[];
+};
+
+export default function MasterPage() {
+  const { id } = useParams() as { id: string };
+  const [master, setMaster] = useState<Master | null>(null);
+  const [timeSlots, setTimeSlots] = useState<TimeSlot[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!id || typeof id !== "string") return;
+
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const resMaster = await fetch(`/api/masters/${id}`);
+        if (!resMaster.ok) {
+          setMaster(null);
+          setLoading(false);
+          return;
+        }
+        const masterData = await resMaster.json();
+        setMaster(masterData);
+
+        const resSlots = await fetch(`/api/masters/${id}/slots`);
+        const slotData = await resSlots.json();
+        setTimeSlots(slotData);
+      } catch (error) {
+        console.error("❌ Помилка при завантаженні майстра:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [id]);
+
+  if (loading) return <div className="p-6 text-center">Завантаження...</div>;
+  if (!master) return <div className="p-6 text-center text-red-600">Майстра не знайдено</div>;
 
   return (
     <div className="p-6 flex flex-col items-center">
@@ -31,17 +77,8 @@ export default async function MasterPage({ params }: { params: { id: string } })
       ) : (
         <MasterBookingClient
           masterId={master.id}
-          subtypes={master.subtypes.map((subtype) => ({
-            id: subtype.id,
-            name: subtype.name,
-            duration: subtype.duration,
-            price: subtype.price,
-          }))}
-          timeSlots={timeSlots.map((slot) => ({
-            id: slot.id,
-            start: slot.start.toISOString(),
-            end: slot.end.toISOString(),
-          }))}
+          subtypes={master.subtypes}
+          timeSlots={timeSlots}
         />
       )}
     </div>
