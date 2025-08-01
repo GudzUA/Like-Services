@@ -1,13 +1,28 @@
-export const dynamic = "force-dynamic";
+"use client";
 
-import { prisma } from "@/lib/db";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 
-export default async function ServicesPage() {
-  const taskServices = await prisma.service.findMany({
-    where: { type: "task" },
-    orderBy: { name: "asc" },
-  });
+interface Service {
+  id: string;
+  name: string;
+  type: string;
+}
+
+export default function ServicesPage() {
+  const [taskServices, setTaskServices] = useState<Service[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch("/api/services-task")
+      .then((res) => res.json())
+      .then((data) => {
+        setTaskServices(data);
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) return <p className="p-6 text-center">Завантаження...</p>;
 
   return (
     <main className="p-6 flex flex-col items-center">
@@ -17,11 +32,7 @@ export default async function ServicesPage() {
         {taskServices.map((service) => (
           <Link
             key={service.id}
-            href={
-              service.name === "Services"
-                ? "/task"
-                : `/task/${service.id}`
-            }
+            href={service.name === "Services" ? "/task" : `/api/services/services-task`}
             className="w-80 bg-white border border-gray-300 rounded-lg shadow-lg hover:shadow-xl transition-all px-6 py-4 text-gray-800 hover:bg-gray-100"
           >
             <div className="flex items-center gap-4">
