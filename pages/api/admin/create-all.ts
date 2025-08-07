@@ -1,7 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/lib/prisma";
-import type { Service } from "@prisma/client";
-import type { TimeSlot } from "@prisma/client";
+import type { Service, TimeSlot } from "@prisma/client";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
@@ -11,27 +10,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const { service, master, subtypes, timeSlots, masterType, photoUrl } = req.body;
 
-let existingService: Service | null = null;
+    let existingService: Service | null = null;
 
-if (service.id) {
-  existingService = await prisma.service.findUnique({
-    where: { id: service.id },
-  });
-} else {
-  existingService = await prisma.service.findFirst({
-    where: { name: service.name },
-  });
+    if (service.id) {
+      existingService = await prisma.service.findUnique({
+        where: { id: service.id },
+      });
+    } else {
+      existingService = await prisma.service.findFirst({
+        where: { name: service.name },
+      });
 
-  if (!existingService) {
-    existingService = await prisma.service.create({
-      data: { name: service.name, type: service.type },
-    });
-  }
-}
+      if (!existingService) {
+        existingService = await prisma.service.create({
+          data: { name: service.name, type: service.type },
+        });
+      }
+    }
 
-if (!existingService) {
-  return res.status(500).json({ success: false, message: "Service is null after creation." });
-}
+    if (!existingService) {
+      return res.status(500).json({ success: false, message: "Service is null after creation." });
+    }
 
     let createdMaster = await prisma.user.findUnique({
       where: { email: master.email },
@@ -64,8 +63,9 @@ if (!existingService) {
       });
     }
 
-    const createdSubtypes = await Promise.all(
-      subtypes.map((subtype: any) =>
+   const createdSubtypes = await Promise.all(
+  Array.isArray(subtypes)
+    ? subtypes.map((subtype: any) =>
         prisma.subtype.create({
           data: {
             name: subtype.name,
@@ -76,36 +76,38 @@ if (!existingService) {
           },
         })
       )
-    );
+    : []
+);
+
 
     const createdTimeSlots: TimeSlot[] = [];
 
-for (const slot of timeSlots) {
-  try {
-    const start = new Date(slot.start);
-    const end = new Date(slot.end);
+    for (const slot of timeSlots || []) {
+      try {
+        const start = new Date(slot.start);
+        const end = new Date(slot.end);
 
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-      console.warn("⛔️ Пропущено невалідний слот:", slot);
-      continue;
+        if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+          console.warn("⛔️ Пропущено невалідний слот:", slot);
+          continue;
+        }
+
+        start.setMinutes(start.getMinutes() - start.getTimezoneOffset());
+        end.setMinutes(end.getMinutes() - end.getTimezoneOffset());
+
+        const created = await prisma.timeSlot.create({
+          data: {
+            start,
+            end,
+            masterId: createdMaster.id,
+          },
+        });
+
+        createdTimeSlots.push(created);
+      } catch (err) {
+        console.error("⚠️ Помилка при створенні слота:", slot, err);
+      }
     }
-
-    start.setMinutes(start.getMinutes() - start.getTimezoneOffset());
-    end.setMinutes(end.getMinutes() - end.getTimezoneOffset());
-
-    const created = await prisma.timeSlot.create({
-      data: {
-        start,
-        end,
-        masterId: createdMaster.id,
-      },
-    });
-
-    createdTimeSlots.push(created);
-  } catch (err) {
-    console.error("⚠️ Помилка при створенні слота:", slot, err);
-  }
-}
 
     return res.status(200).json({
       success: true,

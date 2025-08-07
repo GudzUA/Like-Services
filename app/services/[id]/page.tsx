@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from 'next/navigation';
 
 type Master = {
   id: string;
@@ -22,6 +23,8 @@ export default function ServiceMastersPage() {
   const { id } = useParams() as { id: string };
   const [service, setService] = useState<Service | null>(null);
   const [loading, setLoading] = useState(true);
+  const router = useRouter();
+
 
   useEffect(() => {
     if (!id || typeof id !== "string") return;
@@ -91,6 +94,14 @@ export default function ServiceMastersPage() {
               </div>
             </Link>
           ))}
+ <div className="mt-4 flex justify-center">
+  <button
+    onClick={() => router.back()}
+    className="bg-white text-blue-700 border border-blue-700 px-4 py-2 rounded hover:bg-blue-50"
+  >
+    ← Назад
+  </button>
+</div>
         </div>
       )}
     </main>

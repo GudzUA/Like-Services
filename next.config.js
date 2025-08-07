@@ -1,13 +1,10 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ['i.ibb.co'],
+    domains: ["i.ibb.co"],
   },
-  experimental: {
-    serverActions: true,
-  },
-  output: 'standalone', 
+  // experimental.serverActions більше не потрібен у сучасному Next.js
+  output: "standalone",
 };
 
 module.exports = nextConfig;
-

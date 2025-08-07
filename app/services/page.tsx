@@ -14,7 +14,7 @@ export default function ServicesPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetch("/api/services-task")
+    fetch("/api/services/services-task")
       .then((res) => res.json())
       .then((data) => {
         setTaskServices(data);
@@ -31,10 +31,10 @@ export default function ServicesPage() {
       <div className="flex flex-col gap-4">
         {taskServices.map((service) => (
           <Link
-            key={service.id}
-            href={service.name === "Services" ? "/task" : `/api/services/services-task`}
-            className="w-80 bg-white border border-gray-300 rounded-lg shadow-lg hover:shadow-xl transition-all px-6 py-4 text-gray-800 hover:bg-gray-100"
-          >
+  key={service.id}
+  href={`/task/${service.id}`}
+  className="w-80 bg-white border border-gray-300 rounded-lg shadow-lg hover:shadow-xl transition-all px-6 py-4 text-gray-800 hover:bg-gray-100"
+>
             <div className="flex items-center gap-4">
               <span className="text-2xl">🛠</span>
               <span className="text-xl font-medium">{service.name}</span>

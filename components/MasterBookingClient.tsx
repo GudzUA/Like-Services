@@ -16,15 +16,16 @@ interface SlotMap {
   [id: string]: { start: string; end: string };
 }
 
+type Slot = { id: string; start: string; end: string };
+
 export default function MasterBookingClient({
   masterId,
   subtypes,
-  timeSlots, // ← додай сюди
 }: {
   masterId: string;
   subtypes: Subtype[];
-  timeSlots: { id: string; start: string; end: string; }[]; // типізація слота
 }) {
+  const router = useRouter();
 
   const [selectedSubtype, setSelectedSubtype] = useState<Subtype | null>(null);
   const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
@@ -33,32 +34,53 @@ export default function MasterBookingClient({
   const [formData, setFormData] = useState({ name: "", phone: "" });
   const [showModal, setShowModal] = useState(false);
   const [success, setSuccess] = useState(false);
+
   const [bookedSlotIds, setBookedSlotIds] = useState<string[]>([]);
+  const [availableSlots, setAvailableSlots] = useState<Slot[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
 
-useEffect(() => {
-  if (!masterId) return;
-
-  const fetchBookedSlots = async () => {
-    try {
-      const res = await fetch(`/api/bookings/booked?masterId=${masterId}`);
-      const data = await res.json();
-      if (Array.isArray(data)) {
-        setBookedSlotIds(data.map((item) => item.slotId));
+  // завантажити вже заброньовані слоти майстра
+  useEffect(() => {
+    if (!masterId) return;
+    (async () => {
+      try {
+        const res = await fetch(`/api/bookings/booked?masterId=${masterId}`, { cache: "no-store" });
+        const data = await res.json();
+        if (Array.isArray(data)) setBookedSlotIds(data.map((x: any) => x.slotId));
+      } catch (err) {
+        console.error("❌ Error loading booked slots", err);
       }
-    } catch (err) {
-      console.error("❌ Error loading booked slots", err);
+    })();
+  }, [masterId]);
+
+  // ПІСЛЯ вибору підтипу — тягнемо доступні слоти
+  useEffect(() => {
+    if (!masterId || !selectedSubtype?.id) {
+      setAvailableSlots([]);
+      return;
     }
-  };
-
-  fetchBookedSlots();
-}, [masterId]);
-
-
-  const router = useRouter();
+    (async () => {
+      try {
+        setLoadingSlots(true);
+        const res = await fetch("/api/slots/available", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ masterId, subtypeId: selectedSubtype.id }),
+        });
+        const data = await res.json();
+        setAvailableSlots(Array.isArray(data?.slots) ? data.slots : []);
+      } catch (e) {
+        console.error("fetch /api/slots/available error", e);
+        setAvailableSlots([]);
+      } finally {
+        setLoadingSlots(false);
+      }
+    })();
+  }, [masterId, selectedSubtype?.id]);
 
   const handleSlotSelect = (slotId: string, start: string, end: string) => {
     setSelectedSlot(slotId);
-    setSlotTimes({ ...slotTimes, [slotId]: { start, end } });
+    setSlotTimes((prev) => ({ ...prev, [slotId]: { start, end } }));
     setShowForm(true);
   };
 
@@ -80,10 +102,7 @@ useEffect(() => {
       setShowModal(false);
       setShowForm(false);
       setFormData({ name: "", phone: "" });
-
-      setTimeout(() => {
-        router.push("/");
-      }, 2000);
+      setTimeout(() => router.push("/"), 2000);
     } else {
       alert("❌ Помилка при створенні запису");
     }
@@ -102,49 +121,50 @@ useEffect(() => {
 
   return (
     <div className="w-full max-w-xl mx-auto">
-      {/* Вибір підтипу */}
-<div className="flex flex-col gap-3 mb-6">
-  {subtypes.map((subtype) => (
-    <button
-      key={subtype.id}
-      onClick={() => {
-        setSelectedSubtype(subtype);
-        setSelectedSlot(null);
-        setShowForm(false);
-        setSuccess(false);
-      }}
-      className={`w-full flex justify-between items-center px-4 py-3 border rounded-lg shadow-sm transition text-sm sm:text-base
-        ${
-          selectedSubtype?.id === subtype.id
-            ? "bg-blue-600 text-white border-blue-600"
-            : "bg-white hover:bg-blue-50"
-        }`}
-    >
-      <span className="font-medium">{subtype.name}</span>
-      <span className="flex items-center gap-4">
-        <span>💰 {subtype.price} CAD</span>
-        <span>⏱ {subtype.duration} хв</span>
-      </span>
-    </button>
-  ))}
-</div>
+      {/* Підтипи */}
+      <div className="flex flex-col gap-3 mb-6">
+        {subtypes.map((subtype) => (
+          <button
+            key={subtype.id}
+            onClick={() => {
+              setSelectedSubtype(subtype);
+              setSelectedSlot(null);
+              setShowForm(false);
+              setSuccess(false);
+            }}
+            className={`w-full flex justify-between items-center px-4 py-3 border rounded-lg shadow-sm transition text-sm sm:text-base ${
+              selectedSubtype?.id === subtype.id
+                ? "bg-blue-600 text-white border-blue-600"
+                : "bg-white hover:bg-blue-50"
+            }`}
+          >
+            <span className="font-medium">{subtype.name}</span>
+            <span className="flex items-center gap-4">
+              <span>💰 {subtype.price} CAD</span>
+              <span>⏱ {subtype.duration} хв</span>
+            </span>
+          </button>
+        ))}
+      </div>
 
-
-      {/* Вибраний підтип + слоти */}
+      {/* Обраний підтип + слоти */}
       {selectedSubtype && (
         <div className="border bg-white p-4 rounded shadow">
           <p className="font-medium mb-3 text-center">
-            🔹 Обрано: <b>{selectedSubtype.name}</b> — 💲{selectedSubtype.price} — ⏱{" "}
-            {selectedSubtype.duration} хв
+            🔹 Обрано: <b>{selectedSubtype.name}</b> — 💲{selectedSubtype.price} — ⏱ {selectedSubtype.duration} хв
           </p>
 
-<TimeSlotSelector
-  masterId={masterId}
-  subtypeId={selectedSubtype.id}
-  timeSlots={timeSlots} 
-  bookedSlotIds={bookedSlotIds}
-  onSelect={(slotId, start, end) => handleSlotSelect(slotId, start, end)}
-/>
+          {loadingSlots ? (
+            <div className="text-center py-3">Завантаження слотів…</div>
+          ) : (
+            <TimeSlotSelector
+              masterId={masterId}
+              subtypeId={selectedSubtype.id}
+              timeSlots={availableSlots}               // ← слоти з /api/slots/available
+              bookedSlotIds={bookedSlotIds}
+              onSelect={(slotId, start, end) => handleSlotSelect(slotId, start, end)}
+            />
+          )}
         </div>
       )}
 
@@ -152,7 +172,6 @@ useEffect(() => {
       {showForm && selectedSlot && (
         <div className="mt-6 border-t pt-4">
           <h3 className="font-bold mb-3 text-center">📋 Форма запису</h3>
-
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -166,9 +185,7 @@ useEffect(() => {
               className="border p-2 rounded w-full mb-2"
               required
               value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
             />
             <input
               name="phone"
@@ -177,14 +194,9 @@ useEffect(() => {
               className="border p-2 rounded w-full mb-2"
               required
               value={formData.phone}
-              onChange={(e) =>
-                setFormData({ ...formData, phone: e.target.value })
-              }
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
             />
-            <button
-              type="submit"
-              className="bg-blue-600 text-white px-4 py-2 rounded w-full"
-            >
+            <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded w-full">
               Підтвердити запис
             </button>
           </form>
@@ -198,7 +210,7 @@ useEffect(() => {
         </div>
       )}
 
-      {/* Модал підтвердження */}
+      {/* Модальне підтвердження */}
       {showModal && selectedTime && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
           <div className="bg-white p-6 rounded shadow-lg w-80">
@@ -208,16 +220,10 @@ useEffect(() => {
             <p>📅 <b>{selectedTime.date}</b></p>
             <p>🕒 <b>{selectedTime.time}</b></p>
             <div className="flex justify-end mt-4 gap-2">
-              <button
-                onClick={() => setShowModal(false)}
-                className="px-3 py-1 bg-gray-300 rounded"
-              >
+              <button onClick={() => setShowModal(false)} className="px-3 py-1 bg-gray-300 rounded">
                 Скасувати
               </button>
-              <button
-                onClick={handleSubmit}
-                className="px-3 py-1 bg-blue-600 text-white rounded"
-              >
+              <button onClick={handleSubmit} className="px-3 py-1 bg-blue-600 text-white rounded">
                 Так, записати
               </button>
             </div>
@@ -227,4 +233,3 @@ useEffect(() => {
     </div>
   );
 }
-

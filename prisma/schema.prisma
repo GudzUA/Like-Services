@@ -73,6 +73,10 @@ model TimeSlot {
   masterId  String?
 
   booking   Booking? // Якщо хтось забронював — тут буде запис
+
+  @@index([end])             
+  @@unique([masterId, start, end]) 
+
 }
 
 //

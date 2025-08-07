@@ -11,42 +11,35 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   try {
     const { masterId, subtypeId } = req.body;
 
+    if (!masterId || typeof masterId !== "string") {
+      return res.status(400).json({ error: "Invalid masterId" });
+    }
     if (!subtypeId || typeof subtypeId !== "string") {
       return res.status(400).json({ error: "Invalid subtypeId" });
     }
 
     const subtype = await prisma.subtype.findUnique({ where: { id: subtypeId } });
+    if (!subtype) return res.status(404).json({ error: "Subtype not found" });
 
-    if (!subtype) {
-      return res.status(404).json({ error: "Subtype not found" });
-    }
+    const duration = subtype.duration; // хв
 
-    const duration = subtype.duration;
-    const now = new Date();
-    const endDate = addMinutes(now, 60 * 24 * 7); // 7 днів наперед
-
+    // ✔ Віддаємо ВСІ вільні слоти майстра (без обмеження по даті/тижню)
     const timeSlots = await prisma.timeSlot.findMany({
-      where: {
-        masterId,
-        start: { gte: now, lte: endDate },
-      },
-      include: {
-        booking: true,
-      },
-      orderBy: { start: "asc" },
-    });
+  where: { masterId, booking: null },
+  select: { id: true, start: true, end: true },
+  orderBy: { start: "asc" },
+});
 
-    const availableSlots = timeSlots
-      .filter((s) => !s.booking)
-      .map((s) => ({
-        id: s.id,
-        start: s.start,
-        end: addMinutes(s.start, duration),
-      }));
+    // Якщо end не заповнено — рахуємо від duration підтипу
+    const availableSlots = timeSlots.map((s) => ({
+      id: s.id,
+      start: s.start,
+      end: s.end ?? addMinutes(s.start, duration),
+    }));
 
     return res.status(200).json({ slots: availableSlots });
   } catch (error: any) {
     console.error("❌ Failed to fetch slots:", error);
-    return res.status(500).json({ error: error.message });
+    return res.status(500).json({ error: error.message || "Internal Error" });
   }
 }
