@@ -12,7 +12,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
     const oldFreeSlots = await prisma.timeSlot.findMany({
       where: {
-        end: { lt: now },
+        end: { lt: new Date },
         booking: null,
       },
       select: { id: true },
