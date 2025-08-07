@@ -1,4 +1,3 @@
-
 // pages/api/cron/cleanup-slots.ts
 import type { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/lib/prisma";
@@ -9,9 +8,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const now = new Date();
+    const now = new Date(); // UTC — як всюди в системі
 
-    // Знаходимо ID слотів у минулому без бронювання
     const oldFreeSlots = await prisma.timeSlot.findMany({
       where: {
         end: { lt: now },
