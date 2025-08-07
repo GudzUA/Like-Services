@@ -8,11 +8,14 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   try {
-    const now = new Date(); // UTC — як всюди в системі
+    const now = new Date();
+
+    // ❗️Поріг — 24 години тому
+    const safeCutoff = new Date(now.getTime() - 24 * 60 * 60 * 1000);
 
     const oldFreeSlots = await prisma.timeSlot.findMany({
       where: {
-        end: { lt: new Date },
+        end: { lt: safeCutoff },
         booking: null,
       },
       select: { id: true },
