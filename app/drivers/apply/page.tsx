@@ -21,6 +21,8 @@ export default function DriverApplyPage() {
   const [agreeRules, setAgreeRules] = useState(false);
   const [voteReady, setVoteReady] = useState(false);
   const [promoReady, setPromoReady] = useState(false);
+  const [confirmData, setConfirmData] = useState(false);
+
 
   // ui
   const [submitting, setSubmitting] = useState(false);
@@ -53,6 +55,7 @@ export default function DriverApplyPage() {
     setAgreeRules(false);
     setVoteReady(false);
     setPromoReady(false);
+    setConfirmData(false); 
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -64,6 +67,8 @@ export default function DriverApplyPage() {
     if (!employment) return setErr("Оберіть зайнятість.");
     if (!activity) return setErr("Оберіть діяльність.");
     if (!agreeRules) return setErr("Потрібна згода з правилами спільноти.");
+    if (!confirmData) return setErr("Підтвердіть правильність даних і згоду на їх використання.");
+
 
     setSubmitting(true);
     try {
@@ -272,19 +277,33 @@ export default function DriverApplyPage() {
             />
             <span>Готовий брати участь в акціях та ініціативах</span>
           </label>
+
+<label className="flex items-start gap-2">
+  <input
+    type="checkbox"
+    className="mt-1"
+    checked={confirmData}
+    onChange={(e) => setConfirmData(e.target.checked)}
+    required
+  />
+  <span>
+    Підтверджую правильність наданих мною даних та погоджуюсь на їх використання
+    для членства у спільноті
+  </span>
+</label>
         </div>
 
         {err && <div className="text-red-600 text-sm font-medium">{err}</div>}
 
-        <button
-          type="submit"
-          disabled={submitting}
-          className={`w-full rounded bg-blue-600 text-white py-2 font-semibold transition ${
-            submitting ? "opacity-70 cursor-not-allowed" : "hover:bg-blue-700"
-          }`}
-        >
-          {submitting ? "Надсилаємо…" : "Надіслати"}
-        </button>
+<button
+  type="submit"
+  disabled={submitting || !confirmData}
+  className={`w-full rounded bg-blue-600 text-white py-2 font-semibold transition ${
+    submitting || !confirmData ? "opacity-70 cursor-not-allowed" : "hover:bg-blue-700"
+  }`}
+>
+  {submitting ? "Надсилаємо…" : "Надіслати"}
+</button>
       </form>
 
       {/* MODAL */}
