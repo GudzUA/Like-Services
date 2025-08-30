@@ -1,6 +1,7 @@
 // pages/api/bookings/create.ts
 import { NextApiRequest, NextApiResponse } from "next";
 import { prisma } from "@/lib/prisma";
+import { sendTgMessage } from "@/lib/telegram";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "POST") {
@@ -31,6 +32,32 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         timeSlotId: slotId,
       },
     });
+
+// ... після prisma.booking.create(...)
+const slot = await prisma.timeSlot.findUnique({ where: { id: slotId } });
+const subtypeRow = subtypeId ? await prisma.subtype.findUnique({ where: { id: subtypeId } }) : null;
+
+// знайдемо майстра через слот
+const master = slot?.masterId
+  ? await prisma.user.findUnique({ where: { id: slot.masterId } })
+  : null;
+
+if (master?.telegramChatId) {
+  const startStr = slot?.start ? new Date(slot.start).toLocaleString() : "";
+  const endStr   = slot?.end   ? new Date(slot.end).toLocaleString()   : "";
+
+  await sendTgMessage(
+    master.telegramChatId,
+    [
+      "🆕 <b>Нове бронювання</b>",
+      `👤 Ім’я: <b>${name}</b>`,
+      `📞 Телефон: <b>${phone}</b>`,
+      subtypeRow ? `🧾 Підтип: <b>${subtypeRow.name}</b>` : null,
+      slot ? `🗓 Час: <b>${startStr}</b> – <b>${endStr}</b>` : null,
+      `🆔 Бронювання: <code>${booking.id}</code>`,
+    ].filter(Boolean).join("\n")
+  );
+}
 
     return res.status(200).json({ success: true, booking });
   } catch (error: any) {

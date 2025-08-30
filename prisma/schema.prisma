@@ -17,6 +17,7 @@ model User {
   email     String  @unique
   name      String?
   phone     String  @unique
+  telegramChatId  String?  @unique
   address   String?
   photoUrl   String?
   masterType   String?
@@ -99,7 +100,7 @@ model Booking {
 model Task {
   id        String   @id @default(cuid())
   category  String   // Категорія: "Чоловік на годину", "Ремонт телефону", тощо
-  details   String   // Опис завдання
+  details   String?  @db.LongText  // Опис завдання
   price     Int?     // Бажана ціна (може бути null)
   flexible  Boolean  // true = майстер сам призначить ціну
   name      String   // Імʼя клієнта
@@ -109,3 +110,18 @@ model Task {
   createdAt DateTime @default(now())
 }
 
+model Driver {
+  id             String  @id @default(cuid())
+  name           String
+  phone          String? @unique
+  telegram       String? @unique
+  carMake        String?
+  carModel       String?
+  year           Int?
+  color          String?
+  employmentType String   // full_time | part_time
+  worksIn        String   // taxi | delivery | both
+  agreeRules     Boolean  @default(false)
+  agreeVoting    Boolean  @default(false)
+  agreeActions   Boolean  @default(false)
+}
