@@ -129,7 +129,7 @@ export default function DriverApplyPage() {
 
       <form
         onSubmit={handleSubmit}
-        className="bg-white rounded-lg border shadow-sm p-4 sm:p-6 space-y-4"
+        className="bg-gray-100 rounded-lg border shadow-sm p-4 sm:p-6 space-y-4"
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="sm:col-span-2">
@@ -315,14 +315,14 @@ export default function DriverApplyPage() {
               Дякуємо, що долучаєтесь! 💙💛
             </p>
 
-      <a
-        href="https://t.me/+zWOOiPwFLjs2NjUx"
-        target="_blank"
-        rel="noopener noreferrer"
-        className="inline-flex justify-center w-full rounded bg-blue-600 text-white py-2 font-semibold hover:bg-blue-700 mb-2"
-      >
-        Приєднатися до Telegram-спільноти
-      </a>
+<a
+  href="https://t.me/+zWOOiPwFLjs2NjUx"
+  target="_blank"
+  rel="noopener noreferrer"
+  className="w-full block text-center bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-lg transition duration-200"
+>
+  Приєднатися до Telegram-спільноти
+</a>
 
             <button
               className="mt-2 inline-flex justify-center w-full rounded border py-2 font-semibold hover:bg-gray-50"
